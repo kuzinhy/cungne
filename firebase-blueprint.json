@@ -1,0 +1,147 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile in CùngNè",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "email": { "type": "string" },
+        "displayName": { "type": "string", "maxLength": 100 },
+        "username": { "type": "string", "maxLength": 30 },
+        "avatar": { "type": "string", "maxLength": 1000 },
+        "cover": { "type": "string", "maxLength": 1000 },
+        "bio": { "type": "string", "maxLength": 500 },
+        "interests": { "type": "array" },
+        "followersCount": { "type": "number" },
+        "followingCount": { "type": "number" },
+        "postsCount": { "type": "number" },
+        "role": { "type": "string", "enum": ["member", "moderator", "admin"] },
+        "verified": { "type": "boolean" },
+        "status": { "type": "string", "enum": ["active", "suspended", "banned"] },
+        "location": { "type": "string", "maxLength": 100 },
+        "website": { "type": "string", "maxLength": 200 },
+        "badges": { "type": "array" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["uid", "email", "displayName", "username", "role", "status"]
+    },
+    "Post": {
+      "title": "Post",
+      "description": "Social post on CùngNè",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "authorId": { "type": "string" },
+        "authorName": { "type": "string" },
+        "authorUsername": { "type": "string" },
+        "authorAvatar": { "type": "string" },
+        "authorBadge": { "type": "string" },
+        "content": { "type": "string", "maxLength": 5000 },
+        "images": { "type": "array" },
+        "video": { "type": "string" },
+        "category": { "type": "string" },
+        "hashtags": { "type": "array" },
+        "likesCount": { "type": "number" },
+        "commentsCount": { "type": "number" },
+        "sharesCount": { "type": "number" },
+        "bookmarksCount": { "type": "number" },
+        "communityId": { "type": "string" },
+        "visibility": { "type": "string", "enum": ["public", "followers"] },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["authorId", "content", "category"]
+    },
+    "Comment": {
+      "title": "Comment",
+      "description": "Comment under a post",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "postId": { "type": "string" },
+        "authorId": { "type": "string" },
+        "authorName": { "type": "string" },
+        "authorUsername": { "type": "string" },
+        "authorAvatar": { "type": "string" },
+        "content": { "type": "string", "maxLength": 1000 },
+        "parentId": { "type": "string" },
+        "likesCount": { "type": "number" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["postId", "authorId", "content"]
+    },
+    "Community": {
+      "title": "Community",
+      "description": "Group or Community on CùngNè",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string", "maxLength": 100 },
+        "description": { "type": "string", "maxLength": 1000 },
+        "avatar": { "type": "string" },
+        "cover": { "type": "string" },
+        "topic": { "type": "string" },
+        "ownerId": { "type": "string" },
+        "membersCount": { "type": "number" },
+        "postsCount": { "type": "number" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["name", "ownerId", "topic"]
+    },
+    "Conversation": {
+      "title": "Conversation",
+      "description": "Direct message conversation",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "participants": { "type": "array" },
+        "participantDetails": { "type": "object" },
+        "lastMessage": { "type": "object" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["participants"]
+    },
+    "Message": {
+      "title": "Message",
+      "description": "Single chat message in conversation",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "conversationId": { "type": "string" },
+        "senderId": { "type": "string" },
+        "text": { "type": "string", "maxLength": 3000 },
+        "type": { "type": "string", "enum": ["text", "image", "file"] },
+        "imageUrl": { "type": "string" },
+        "seen": { "type": "boolean" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["senderId", "conversationId"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User profile documents"
+    },
+    "/posts/{postId}": {
+      "schema": "Post",
+      "description": "Public social feed posts"
+    },
+    "/posts/{postId}/comments/{commentId}": {
+      "schema": "Comment",
+      "description": "Post comments"
+    },
+    "/communities/{communityId}": {
+      "schema": "Community",
+      "description": "Interest-based communities"
+    },
+    "/conversations/{conversationId}": {
+      "schema": "Conversation",
+      "description": "Direct messaging rooms"
+    },
+    "/conversations/{conversationId}/messages/{messageId}": {
+      "schema": "Message",
+      "description": "Chat messages"
+    }
+  }
+}

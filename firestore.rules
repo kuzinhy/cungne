@@ -1,0 +1,192 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isSuperAdmin() {
+      return isSignedIn() && (
+        request.auth.token.email == "nguyenhuy.thudaumot@gmail.com" ||
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+      );
+    }
+
+    function isStaff() {
+      return isSuperAdmin() || (
+        isSignedIn() && 
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['admin', 'moderator']
+      );
+    }
+
+    // Default deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Admins registry
+    match /admins/{adminId} {
+      allow read: if isSignedIn();
+      allow write: if isSuperAdmin();
+    }
+
+    // Users Collection
+    match /users/{userId} {
+      allow read: if true;
+      allow create: if isSignedIn() && (request.auth.uid == userId || isSuperAdmin());
+      allow update: if isOwner(userId) || isStaff();
+      allow delete: if isSuperAdmin();
+    }
+
+    // Usernames uniqueness lookup
+    match /usernames/{username} {
+      allow read: if true;
+      allow create, update: if isSignedIn();
+      allow delete: if isSignedIn() || isStaff();
+    }
+
+    // Posts Collection
+    match /posts/{postId} {
+      allow read: if true;
+      allow create: if isSignedIn() && request.resource.data.authorId == request.auth.uid;
+      allow update: if isSignedIn() && (
+        resource.data.authorId == request.auth.uid || 
+        isStaff() ||
+        // Allow updating likesCount, commentsCount, sharesCount, bookmarksCount
+        request.resource.data.diff(resource.data).affectedKeys().hasAny(['likesCount', 'commentsCount', 'sharesCount', 'bookmarksCount', 'reactions'])
+      );
+      allow delete: if isSignedIn() && (resource.data.authorId == request.auth.uid || isStaff());
+
+      // Comments subcollection
+      match /comments/{commentId} {
+        allow read: if true;
+        allow create: if isSignedIn() && request.resource.data.authorId == request.auth.uid;
+        allow update: if isSignedIn() && (
+          resource.data.authorId == request.auth.uid || 
+          isStaff() ||
+          request.resource.data.diff(resource.data).affectedKeys().hasAny(['likesCount'])
+        );
+        allow delete: if isSignedIn() && (resource.data.authorId == request.auth.uid || isStaff());
+      }
+    }
+
+    // Standalone comments collection if queried globally
+    match /comments/{commentId} {
+      allow read: if true;
+      allow create: if isSignedIn() && request.resource.data.authorId == request.auth.uid;
+      allow update: if isSignedIn() && (resource.data.authorId == request.auth.uid || isStaff());
+      allow delete: if isSignedIn() && (resource.data.authorId == request.auth.uid || isStaff());
+    }
+
+    // Reactions Collection (Post reactions)
+    match /reactions/{reactionId} {
+      allow read: if true;
+      allow create, update: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+      allow delete: if isSignedIn() && (resource.data.userId == request.auth.uid || isStaff());
+    }
+
+    // Follows Collection
+    match /follows/{followId} {
+      allow read: if true;
+      allow create: if isSignedIn() && request.resource.data.followerId == request.auth.uid;
+      allow delete: if isSignedIn() && (resource.data.followerId == request.auth.uid || isStaff());
+    }
+
+    // Bookmarks Collection
+    match /bookmarks/{bookmarkId} {
+      allow read: if isSignedIn() && (resource.data.userId == request.auth.uid || isStaff());
+      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+      allow delete: if isSignedIn() && (resource.data.userId == request.auth.uid || isStaff());
+    }
+
+    // Communities Collection
+    match /communities/{communityId} {
+      allow read: if true;
+      allow create: if isSignedIn();
+      allow update: if isSignedIn() && (resource.data.ownerId == request.auth.uid || isStaff());
+      allow delete: if isSignedIn() && (resource.data.ownerId == request.auth.uid || isSuperAdmin());
+
+      match /members/{memberId} {
+        allow read: if true;
+        allow create, update: if isSignedIn() && request.auth.uid == memberId;
+        allow delete: if isSignedIn() && (request.auth.uid == memberId || isStaff());
+      }
+    }
+
+    // Community Members lookup collection
+    match /community_members/{id} {
+      allow read: if true;
+      allow create, update: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+      allow delete: if isSignedIn() && (resource.data.userId == request.auth.uid || isStaff());
+    }
+
+    // Conversations / Direct Messages
+    match /conversations/{conversationId} {
+      allow read: if isSignedIn() && (
+        request.auth.uid in resource.data.participants || isStaff()
+      );
+      allow create: if isSignedIn() && (
+        request.auth.uid in request.resource.data.participants
+      );
+      allow update: if isSignedIn() && (
+        request.auth.uid in resource.data.participants || isStaff()
+      );
+      allow delete: if isStaff();
+
+      match /messages/{messageId} {
+        allow read: if isSignedIn();
+        allow create: if isSignedIn() && request.resource.data.senderId == request.auth.uid;
+        allow update: if isSignedIn() && (resource.data.senderId == request.auth.uid || isStaff());
+        allow delete: if isSignedIn() && (resource.data.senderId == request.auth.uid || isStaff());
+      }
+    }
+
+    // Standalone Messages collection if queried across conversations
+    match /messages/{messageId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && request.resource.data.senderId == request.auth.uid;
+      allow update: if isSignedIn() && (resource.data.senderId == request.auth.uid || isStaff());
+      allow delete: if isSignedIn() && (resource.data.senderId == request.auth.uid || isStaff());
+    }
+
+    // Notifications Collection
+    match /notifications/{notificationId} {
+      allow read: if isSignedIn() && (resource.data.recipientId == request.auth.uid || isStaff());
+      allow create: if isSignedIn();
+      allow update: if isSignedIn() && (resource.data.recipientId == request.auth.uid || isStaff());
+      allow delete: if isSignedIn() && (resource.data.recipientId == request.auth.uid || isStaff());
+    }
+
+    // Reports Collection
+    match /reports/{reportId} {
+      allow read: if isStaff();
+      allow create: if isSignedIn() && request.resource.data.reporterId == request.auth.uid;
+      allow update, delete: if isStaff();
+    }
+
+    // Hashtags & Topics
+    match /hashtags/{hashtag} {
+      allow read: if true;
+      allow write: if isSignedIn();
+    }
+
+    match /topics/{topicId} {
+      allow read: if true;
+      allow write: if isStaff();
+    }
+
+    // Admin Audit Logs
+    match /admin_logs/{logId} {
+      allow read: if isStaff();
+      allow create: if isStaff();
+      allow update, delete: if false; // Immutable audit logs
+    }
+  }
+}

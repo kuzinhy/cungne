@@ -1,0 +1,43 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    
+    function isOwner(uid) {
+      return isSignedIn() && request.auth.uid == uid;
+    }
+
+    // Avatars
+    match /avatars/{userId}/{fileName} {
+      allow read: if true;
+      allow write: if isOwner(userId) && request.resource.size < 10 * 1024 * 1024;
+    }
+
+    // Covers
+    match /covers/{userId}/{fileName} {
+      allow read: if true;
+      allow write: if isOwner(userId) && request.resource.size < 15 * 1024 * 1024;
+    }
+
+    // Post images & videos
+    match /posts/{userId}/{postId}/{fileName} {
+      allow read: if true;
+      allow write: if isOwner(userId) && request.resource.size < 50 * 1024 * 1024;
+    }
+
+    // Chat attachments
+    match /messages/{conversationId}/{fileName} {
+      allow read: if isSignedIn();
+      allow write: if isSignedIn() && request.resource.size < 20 * 1024 * 1024;
+    }
+
+    // Communities media
+    match /communities/{communityId}/{fileName} {
+      allow read: if true;
+      allow write: if isSignedIn() && request.resource.size < 15 * 1024 * 1024;
+    }
+  }
+}

@@ -1,0 +1,6 @@
+{
+  "name": "CùngNè",
+  "description": "Mạng xã hội dành cho giới trẻ Việt Nam – Kết nối sở thích, chia sẻ kiến thức, bắt nhịp xu hướng.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
