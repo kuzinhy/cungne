@@ -34,3 +34,35 @@
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
+
+/* Google AI Studio style animated border glow */
+@keyframes borderGlow {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.google-studio-border {
+  position: relative;
+  border-radius: 1.5rem;
+  background: linear-gradient(60deg, #6366f1, #3b82f6, #8b5cf6, #ec4899, #6366f1);
+  background-size: 300% 300%;
+  animation: borderGlow 5s ease infinite;
+  padding: 2px;
+}
+
+.google-studio-content {
+  background: #ffffff;
+  border-radius: calc(1.5rem - 2px);
+}
+
+.dark .google-studio-content {
+  background: #0f172a;
+}
+

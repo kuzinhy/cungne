@@ -126,10 +126,22 @@ export const PostComposer: React.FC<PostComposerProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!currentUser || !userProfile) {
+    if (!currentUser) {
       if (onOpenAuth) onOpenAuth();
       return;
     }
+
+    const activeProfile = userProfile || {
+      uid: currentUser.uid,
+      email: currentUser.email || "",
+      displayName: currentUser.displayName || "Thành viên CùngNè",
+      username: currentUser.email?.split("@")[0] || `user_${currentUser.uid.slice(0, 6)}`,
+      avatar: currentUser.photoURL || `https://api.dicebear.com/7.x/bottts/svg?seed=${currentUser.uid}`,
+      role: currentUser.email?.toLowerCase() === "nguyenhuy.thudaumot@gmail.com" ? "admin" : "member" as const,
+      verified: currentUser.email?.toLowerCase() === "nguyenhuy.thudaumot@gmail.com",
+      status: "active" as const,
+      interests: []
+    };
 
     if (!content.trim() && images.length === 0) {
       showToast("Vui lòng nhập nội dung bài viết hoặc đính kèm ảnh.", "info");
@@ -143,13 +155,13 @@ export const PostComposer: React.FC<PostComposerProps> = ({
       const allTags = Array.from(new Set([...hashtags, ...inlineTags]));
 
       await createPost({
-        authorId: userProfile.uid,
-        authorName: userProfile.displayName,
-        authorUsername: userProfile.username,
-        authorAvatar: userProfile.avatar,
-        authorBadge: userProfile.badges?.[0] || (userProfile.role === "admin" ? "Admin" : undefined),
-        authorVerified: userProfile.verified,
-        authorRole: userProfile.role,
+        authorId: activeProfile.uid,
+        authorName: activeProfile.displayName,
+        authorUsername: activeProfile.username,
+        authorAvatar: activeProfile.avatar,
+        authorBadge: activeProfile.badges?.[0] || (activeProfile.role === "admin" ? "Admin" : undefined),
+        authorVerified: activeProfile.verified,
+        authorRole: activeProfile.role,
         content: content.trim(),
         images,
         category,

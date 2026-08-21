@@ -11,6 +11,7 @@ import {
   User, 
   Settings, 
   ShieldCheck, 
+  ShieldAlert,
   PlusCircle,
   Sparkles
 } from "lucide-react";
@@ -40,7 +41,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     { id: "messages", label: "Tin nhắn", icon: MessageSquare },
     { id: "notifications", label: "Thông báo", icon: Bell },
     { id: "profile", label: "Hồ sơ cá nhân", icon: User, param: { username: userProfile?.username } },
-    { id: "settings", label: "Cài đặt", icon: Settings },
+    { id: "admin", label: "Quản trị & Cài đặt", icon: ShieldAlert },
   ];
 
   return (

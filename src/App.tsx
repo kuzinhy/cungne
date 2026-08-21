@@ -40,6 +40,13 @@ function MainApp() {
   const [showAIModal, setShowAIModal] = useState<boolean>(false);
   const [aiModalType, setAiModalType] = useState<"general" | "career" | "study">("general");
 
+  React.useEffect(() => {
+    if (currentUser) {
+      setShowAuthModal(false);
+      setShowLanding(false);
+    }
+  }, [currentUser]);
+
   const handleNavigate = (view: string, param?: any) => {
     setActiveView(view);
     setViewParams(param || {});

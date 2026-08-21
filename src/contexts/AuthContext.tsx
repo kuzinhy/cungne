@@ -80,16 +80,41 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       setCurrentUser(fbUser);
       if (fbUser) {
         try {
-          const profile = await getUserProfile(fbUser.uid);
-          if (profile) {
+          let profile = await getUserProfile(fbUser.uid);
+          if (!profile) {
+            // Create fallback profile automatically if not found in Firestore
+            const baseUsername = (fbUser.email?.split("@")[0] || `user_${fbUser.uid.slice(0, 6)}`).toLowerCase().replace(/[^a-z0-9_]/g, "");
+            const isAdmin = fbUser.email?.toLowerCase() === SUPER_ADMIN_EMAIL.toLowerCase();
+            profile = {
+              uid: fbUser.uid,
+              email: fbUser.email || "",
+              displayName: fbUser.displayName || `Thành viên ${baseUsername}`,
+              username: baseUsername,
+              avatar: fbUser.photoURL || `https://api.dicebear.com/7.x/bottts/svg?seed=${baseUsername}`,
+              cover: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=1200&q=80",
+              bio: "Chào bạn bè CùngNè! ✨",
+              interests: [],
+              followersCount: 0,
+              followingCount: 0,
+              postsCount: 0,
+              role: isAdmin ? "admin" : "member",
+              verified: isAdmin,
+              status: "active",
+              badges: isAdmin ? ["Admin", "Super Creator"] : ["Thành viên mới"],
+              createdAt: new Date().toISOString()
+            };
+            try {
+              await setDoc(doc(db, "users", fbUser.uid), profile);
+            } catch (_) {}
+          } else {
             if (fbUser.email?.toLowerCase() === SUPER_ADMIN_EMAIL.toLowerCase() && profile.role !== 'admin') {
               profile.role = 'admin';
               profile.verified = true;
             }
-            setUserProfile(profile);
-            if (!profile.interests || profile.interests.length === 0) {
-              setIsOnboarding(true);
-            }
+          }
+          setUserProfile(profile);
+          if (!profile.interests || profile.interests.length === 0) {
+            setIsOnboarding(true);
           }
         } catch (err) {
           console.warn("Error fetching profile on auth state change:", err);
