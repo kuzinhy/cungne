@@ -19,8 +19,14 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMo
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const { refreshProfile, setIsOnboarding } = useAuth();
+  const { currentUser, refreshProfile, setIsOnboarding } = useAuth();
   const { showToast } = useToast();
+
+  React.useEffect(() => {
+    if (currentUser && isOpen) {
+      onClose();
+    }
+  }, [currentUser, isOpen, onClose]);
 
   if (!isOpen) return null;
 
